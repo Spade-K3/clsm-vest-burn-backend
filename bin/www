@@ -1,0 +1,122 @@
+#!/usr/bin/env node
+
+import { LCDClient, Coin } from '@terra-money/terra.js';
+
+/**
+ * Module dependencies.
+ */
+
+var app = require('../app');
+var debug = require('debug')('server:server');
+var http = require('http');
+var axios = require('axios');
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+var port = normalizePort(process.env.PORT || '9000');
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+var server = http.createServer(app);
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+  var addr = server.address();
+  var bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  debug('Listening on ' + bind);
+}
+
+// CLSM Backend
+
+const terra = new LCDClient({
+  URL: 'https://columbus-lcd.terra.dev',
+  chainID: 'columbus-5',
+  isClassic: true  // *set to true to connect terra-classic chain*
+});
+
+const HOUR = 60 * 60 * 1000;
+const PERIOD = 10 * 24 * HOUR;
+const TCLSM_tokenAddress = "terra105fx3jhhz964tl6hvfqs2t0dy6fhsg2qsxgyw0xsww7cdqellyxqc2y8au";
+
+const LUNC_PRICE_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=terra-luna&vs_currencies=usd';
+
+setInterval(() => {
+
+  // Get LUNC Current Price
+  const data = (async() => await axios.get(LUNC_PRICE_URL))();
+  data.then((res) => {
+    // console.log(res.data);
+
+    let data = JSON.stringify(res.data);
+    data = JSON.parse(data);
+
+    console.log(data['terra-luna']['usd']);
+  });
+
+}, 20000 /* PERIOD */);
